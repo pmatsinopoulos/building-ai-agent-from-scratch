@@ -4,11 +4,17 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = [
-    "pydantic>=2.12.5",
-]
+dependencies = ["pydantic>=2.12.5"]
 
 [dependency-groups]
-dev = [
-    "mypy>=1.20.1",
-]
+dev = ["mypy>=1.20.1"]
+
+[tool.mypy]
+python_version = "3.14.3"     # Set to your project's version
+strict = true                 # Enables the most exhaustive type checking
+ignore_missing_imports = true
+
+[tool.pyright]
+typeCheckingMode = "strict" # Options: "off", "basic", "standard", "strict"
+venvPath = "."              # Tells Pyright where to look for your venv
+venv = ".venv"
