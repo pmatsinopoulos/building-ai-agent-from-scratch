@@ -1,7 +1,7 @@
 import uuid
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 from pydantic import BaseModel
 
 from content_types import Event
@@ -13,7 +13,7 @@ class ExecutionContext:
     execution_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     events: List[Event] = field(default_factory=list)
     current_step: int = 0
-    state: Dict[str, Any] = field(default_factory=dict)
+    state: dict[str, Any] = field(default_factory=dict)
     final_result: Optional[str | BaseModel] = None
 
     def add_event(self, event: Event):
