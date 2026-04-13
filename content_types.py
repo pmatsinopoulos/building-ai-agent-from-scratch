@@ -1,5 +1,7 @@
-from typing import Literal, Union
-from pydantic import BaseModel
+from typing import List, Literal, Union
+from pydantic import BaseModel, Field
+import uuid
+import datetime
 
 
 class Message(BaseModel):
@@ -24,3 +26,11 @@ class ToolResult(BaseModel):
     content: list # list of Content Items to send back to the LLM
 
 ContentItem = Union[Message, ToolCall, ToolResult]
+
+class Event(BaseModel):
+    """A recorded occurrence during agent execution."""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    execution_id: str
+    timestamp: float = Field(default_factory=lambda: datetime.now().timestamp())
+    author: str # "user" or agent name
+    content: List[ContentItem] = Field(default_factory=list)
