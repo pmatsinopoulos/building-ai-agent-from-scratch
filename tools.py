@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import inspect
-from typing import Any, Callable
+from typing import Any, Callable, overload
 
 from execution_context import ExecutionContext
 from function_to_tool_utils import format_tool_definition, function_to_input_schema
@@ -80,3 +80,35 @@ class FunctionTool(BaseTool):
     def _generate_tool_definition(self) -> dict[str, Any]:
         parameters = function_to_input_schema(self.func)
         return format_tool_definition(self.name, self.description, parameters)
+
+
+@overload
+def tool(func: Callable[..., Any], /) -> FunctionTool: ...
+
+@overload
+def tool(*, name: str | None = None, description: str | None = None) -> Callable[[Callable[..., Any]], FunctionTool]: ...
+
+def tool(
+    func: Callable[..., Any] | None = None,
+    /,
+    *,
+    name: str | None = None,
+    description: str | None = None,
+) -> FunctionTool | Callable[[Callable[..., Any]], FunctionTool]:
+    """Decorator to turn a function into a FunctionTool.
+
+    Can be used bare or with optional overrides:
+
+        @tool
+        def calculator(expression: str) -> float: ...
+
+        @tool(name="web_search", description="Search the internet")
+        def search_web(query: str) -> str: ...
+    """
+    if func is not None:
+        return FunctionTool(func)
+
+    def decorator(func: Callable[..., Any]) -> FunctionTool:
+        return FunctionTool(func, name=name, description=description)
+
+    return decorator
