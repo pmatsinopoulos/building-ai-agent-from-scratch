@@ -2,7 +2,7 @@ import uuid
 
 from dataclasses import dataclass, field
 from typing import Any, List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, SerializeAsAny
 
 from content_types import Event
 
@@ -14,7 +14,7 @@ class ExecutionContext:
     events: List[Event] = field(default_factory=list)
     current_step: int = 0
     state: dict[str, Any] = field(default_factory=dict)
-    final_result: Optional[str | BaseModel] = None
+    final_result: Optional[str | SerializeAsAny[BaseModel]] = None
 
     def add_event(self, event: Event) -> None:
         """Append an event to the execution context/history."""

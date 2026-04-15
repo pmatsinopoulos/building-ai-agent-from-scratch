@@ -1,6 +1,8 @@
 import inspect
 from typing import Any, Callable
 
+from pydantic import BaseModel
+
 
 def function_to_input_schema(func: Callable[..., Any]) -> dict[str, Any]:
     type_map = {
@@ -22,13 +24,12 @@ def function_to_input_schema(func: Callable[..., Any]) -> dict[str, Any]:
 
     parameters = {}
     for param in signature.parameters.values():
-        try:
-            param_type = type_map.get(param.annotation, "string")
-        except KeyError as e:
-            raise KeyError(
-                f"Unknown type annotation {param.annotation} for parameter {param.name}: {str(e)}"
-            )
-        parameters[param.name] = {"type": param_type}
+        annotation = param.annotation
+        if isinstance(annotation, type) and issubclass(annotation, BaseModel):
+            parameters[param.name] = annotation.model_json_schema()
+        else:
+            param_type = type_map.get(annotation, "string") if isinstance(annotation, type) else "string"
+            parameters[param.name] = {"type": param_type}
 
     required = [
         param.name
