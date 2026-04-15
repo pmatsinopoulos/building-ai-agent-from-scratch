@@ -1,50 +1,21 @@
 import asyncio
-import os
-
-from content_types import Message
-# from agent import Agent
-# from llm_client import LlmClient
-# from tools import calculator, search_web
-
-# async def main():
-#     agent = Agent(
-#         model=LlmClient(model="gpt-5-mini"),
-#         tools=[calculator, search_web],
-#         instructions="You are a helpful assistant"
-#     )
-#     result = await agent.run("What is the result of the multiplication 1234 * 5678?")
-#     print(result)
+from agent import Agent, AgentResult
+from llm_client import LlmClient
+from tools import calculator, search_web
 
 
-# if __name__ == "__main__":
-#     asyncio.run(main())
-
-# Create client
-from llm_client import LlmClient, LlmRequest
-
-
-async def main():
-    client = LlmClient(model="gpt-5-mini")
-
-    request = LlmRequest(
+async def main() -> None:
+    agent = Agent(
+        name="search_agent",
+        llm_client=LlmClient(
+            model="gpt-5-mini"
+        ),
+        tools=[calculator, search_web],
         instructions=["You are a helpful assistant"],
-        contents=[
-            Message(
-                role="user",
-                content="What is the result of 2 + 2?"
-            )
-        ],
+        max_steps=10,
     )
-
-    response = await client.generate(request)
-
-    if response.error_message:
-        print(f"Error: {response.error_message}")
-
-    for item in response.content:
-        if isinstance(item, Message):
-            print(item.content)
+    result: AgentResult = await agent.run(user_input="Can you tell me how much is 1234 * 5678?")
+    print(result.model_dump_json(indent=2))
 
 if __name__ == "__main__":
-    os.environ["LITELLM_LOG"] = "DEBUG"
     asyncio.run(main())
