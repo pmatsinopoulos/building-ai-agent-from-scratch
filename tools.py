@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
-import inspect
-from typing import Any, Callable, overload
+import inspect, os
+from typing import Any, Callable, Literal, cast, overload
 
 from execution_context import ExecutionContext
 from function_to_tool_utils import format_tool_definition, function_to_input_schema
-
+from tavily import TavilyClient
 
 class BaseTool(ABC):
     """Abstract base class for all tools."""
@@ -50,6 +50,7 @@ class FunctionTool(BaseTool):
         description: str | None = None,
         tool_definition: dict[str, Any] | None = None,
     ):
+        self.func = func
         name = name or func.__name__
         description = description or (func.__doc__ or "").strip()
 
@@ -59,7 +60,6 @@ class FunctionTool(BaseTool):
             tool_definition=tool_definition
         )
 
-        self.func = func
         self.needs_context = 'context' in inspect.signature(func).parameters
 
     async def execute(
@@ -112,3 +112,36 @@ def tool(
         return FunctionTool(func, name=name, description=description)
 
     return decorator
+
+@tool
+def calculator(expression: str) -> float:
+    """Calculate the result of a mathematical expression."""
+    return cast(float, eval(expression))
+
+@tool
+def search_web(
+    query: str,
+    max_results: int = 2,
+    topic: Literal["general", "news", "finance"] = "general",
+    time_range: Literal["day", "week", "month", "year"] | None = None,
+    country: str | None = None) -> list[dict[str, Any]] | str:
+    """Search the web using Tavily API.
+
+    Args:
+        query: Search query string
+        max_results: Maximum number of results to return
+        topic: Search topic - 'general', 'news', or 'finance'
+        time_range: Time range filter - 'day', 'week', 'month', or 'year'
+        country: Country filter (e.g., 'US', 'UK', 'CA', 'AU', 'NZ')
+    """
+    try:
+        tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
+        kwargs: dict[str, Any] = dict(query=query, max_results=max_results, topic=topic)
+        if time_range is not None:
+            kwargs["time_range"] = time_range
+        if country is not None:
+            kwargs["country"] = country
+        response = cast(dict[str, Any], tavily_client.search(**kwargs))  # pyright: ignore[reportUnknownMemberType]
+        return cast(list[dict[str, Any]], response.get("results", []))
+    except Exception as e:
+        return f"Search error: {str(e)}"
