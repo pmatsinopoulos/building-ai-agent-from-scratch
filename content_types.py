@@ -1,4 +1,4 @@
-from typing import Any, List, Literal, Union
+from typing import Any, Literal, Sequence, Union
 from pydantic import BaseModel, Field
 import uuid
 from datetime import datetime as dt
@@ -23,7 +23,7 @@ class ToolResult(BaseModel):
     tool_call_id: str
     name: str
     status: Literal["success", "error"]
-    content: list[Any] # list of Content Items to send back to the LLM
+    contents: list[Any] # list of Content Items to send back to the LLM
 
 ContentItem = Union[Message, ToolCall, ToolResult]
 
@@ -33,4 +33,4 @@ class Event(BaseModel):
     execution_id: str
     timestamp: float = Field(default_factory=lambda: dt.now().timestamp())
     author: str # "user" or agent name
-    content: List[ContentItem] = Field(default_factory=list)
+    contents: Sequence[ContentItem] = Field(default_factory=lambda: list[ContentItem]())
