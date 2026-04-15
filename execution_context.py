@@ -16,10 +16,10 @@ class ExecutionContext:
     state: dict[str, Any] = field(default_factory=dict)
     final_result: Optional[str | BaseModel] = None
 
-    def add_event(self, event: Event):
+    def add_event(self, event: Event) -> None:
         """Append an event to the execution context/history."""
         self.events.append(event)
 
-    def increment_step(self):
+    def increment_step(self) -> None:
         """Move to the next execution step."""
         self.current_step += 1

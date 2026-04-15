@@ -1,8 +1,8 @@
 import json
 from typing import Any, Optional, cast
 from pydantic import BaseModel, Field
-from litellm import ModelResponse, acompletion  # type: ignore[reportUnknownVariableType]
-from litellm.types.utils import Usage  # type: ignore[reportUnknownVariableType]
+from litellm import ModelResponse, acompletion
+from litellm.types.utils import Usage
 
 from content_types import ContentItem, Message, ToolCall
 from tools import FunctionTool
@@ -16,7 +16,7 @@ class LlmRequest(BaseModel):
     we allow multiple instruction strings that get combined. This flexibility
     proves useful when instructions come from different sources: base agent instructions,
     task-specific guidance, or dynamically generated context."""
-    instructions: list[str] = Field(default_factory=list)
+    instructions: list[str] | None = Field(default_factory=list)
 
     """Contains the conversation history as ContentItem objects. Messages from
     users and assistants, ToolCalls the LLM requested, and ToolResults from
@@ -38,7 +38,7 @@ class LlmResponse(BaseModel):
     """Contains what the LLM produced represented as ContentItem objects. A response
     might include Message with text, one or more ToolCalls requesting tool execution,
     or both."""
-    content: list[ContentItem] = Field(default_factory=list)
+    contents: list[ContentItem] = Field(default_factory=list)
 
     """Contains failures."""
     error_message: Optional[str] = None
@@ -84,7 +84,7 @@ class LlmClient:
         """Convert LlmRequest to API message format."""
         messages: list[dict[str, Any]] = []
 
-        for instruction in request.instructions:
+        for instruction in request.instructions or []:
             messages.append({
                 "role": "system",
                 "content": instruction
@@ -126,7 +126,7 @@ class LlmClient:
                 messages.append({
                     "role": "tool",
                     "tool_call_id": item.tool_call_id,
-                    "content": str(item.content[0]) if item.content else ""
+                    "content": str(item.contents[0]) if item.contents else ""
                 })
 
         return messages
@@ -156,7 +156,7 @@ class LlmClient:
 
         usage = cast(Usage, getattr(response, "usage"))
         return LlmResponse(
-            content = content_items,
+            contents = content_items,
             usage_metadata = {
                 "input_tokens": usage.prompt_tokens,
                 "output_tokens": usage.completion_tokens,
