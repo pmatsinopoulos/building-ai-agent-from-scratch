@@ -1,21 +1,24 @@
 import numpy as np
 import os
 from openai import OpenAI
+from openai.types import CreateEmbeddingResponse
 from sklearn.metrics.pairwise import cosine_similarity
 
 
-def get_embeddings(client, texts, model="text-embedding-3-small"):
+def get_embeddings(
+    client: OpenAI, texts: list[str], model: str = "text-embedding-3-small"
+) -> np.ndarray:
     """Convert text to embedding vectors."""
 
     if isinstance(texts, str):
         texts = [texts]
 
-    response = client.embeddings.create(input=texts, model=model)
+    response: CreateEmbeddingResponse = client.embeddings.create(input=texts, model=model)
 
     return np.array([item.embedding for item in response.data])
 
 
-def main():
+def main() -> None:
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     sentences = [
         "The cat is sleeping on the couch",
