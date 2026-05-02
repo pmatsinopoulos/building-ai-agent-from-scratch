@@ -17,9 +17,14 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "black>=26.3.1",
     "mypy>=1.20.1",
     "pyright>=1.1.408",
 ]
+
+[tool.black]
+line-length = 100
+target-version = ["py313"]
 
 [tool.mypy]
 python_version = "3.14.3"     # Set to your project's version

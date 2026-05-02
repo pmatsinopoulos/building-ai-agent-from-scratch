@@ -10,6 +10,7 @@ from tools import FunctionTool
 
 class LlmRequest(BaseModel):
     """Request object for LLM calls."""
+
     model_config = {"arbitrary_types_allowed": True}
 
     """Holds system prompt fragments. Rather than a single monolithic prompt,
@@ -50,18 +51,11 @@ class LlmResponse(BaseModel):
 class LlmClient:
     """Client for LLM API calls using LiteLLM."""
 
-    def __init__(
-        self,
-        model: str,
-        **config: Any
-    ):
+    def __init__(self, model: str, **config: Any):
         self.model = model
         self.config: dict[str, Any] = config
 
-    async def generate(
-        self,
-        request: LlmRequest
-    ) -> LlmResponse:
+    async def generate(self, request: LlmRequest) -> LlmResponse:
         """Generate a response from the LLM."""
         try:
             messages = self._build_messages(request)
@@ -71,33 +65,25 @@ class LlmClient:
                 messages=messages,
                 tools=tools,
                 **({"tool_choice": request.tool_choice} if request.tool_choice else {}),
-                **self.config
+                **self.config,
             )
             assert isinstance(response, ModelResponse)
             return self._parse_response(response)
         except Exception as e:
-            return LlmResponse(
-                error_message=str(e)
-            )
+            return LlmResponse(error_message=str(e))
 
     def _build_messages(self, request: LlmRequest) -> list[dict[str, Any]]:
         """Convert LlmRequest to API message format."""
         messages: list[dict[str, Any]] = []
 
         for instruction in request.instructions or []:
-            messages.append({
-                "role": "system",
-                "content": instruction
-            })
+            messages.append({"role": "system", "content": instruction})
 
         for item in request.contents:
             if isinstance(item, Message):
                 """Messages become standard message objects."""
 
-                messages.append({
-                    "role": item.role,
-                    "content": item.content
-                })
+                messages.append({"role": item.role, "content": item.content})
             elif isinstance(item, ToolCall):
                 """ToolCalls get appended to the preceding assistant messages's
                 tool_calls array, since our agent stores them consecutively from
@@ -106,28 +92,25 @@ class LlmClient:
                 tool_call_dict = {
                     "id": item.tool_call_id,
                     "type": "function",
-                    "function": {
-                        "name": item.name,
-                        "arguments": json.dumps(item.arguments)
-                    }
+                    "function": {"name": item.name, "arguments": json.dumps(item.arguments)},
                 }
                 # Append to previous assistant message if exists
                 if messages and messages[-1]["role"] == "assistant":
                     messages[-1].setdefault("tool_calls", []).append(tool_call_dict)
                 else:
-                    messages.append({
-                        "role": "assistant",
-                        "content": None,
-                        "tool_calls": [tool_call_dict]
-                    })
-            else: # if isinstance(item, ToolResult):
+                    messages.append(
+                        {"role": "assistant", "content": None, "tool_calls": [tool_call_dict]}
+                    )
+            else:  # if isinstance(item, ToolResult):
                 """ToolResults become tool-role messages linked back to their
                 originating call via tool_call_id."""
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": item.tool_call_id,
-                    "content": str(item.contents[0]) if item.contents else ""
-                })
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": item.tool_call_id,
+                        "content": str(item.contents[0]) if item.contents else "",
+                    }
+                )
 
         return messages
 
@@ -137,28 +120,23 @@ class LlmClient:
         content_items: list[ContentItem] = []
 
         if choice.message.content:
-            content_items.append(
-                Message(
-                    role="assistant",
-                    content=choice.message.content
-                )
-            )
+            content_items.append(Message(role="assistant", content=choice.message.content))
 
         if choice.message.tool_calls:
             for tool_call in choice.message.tool_calls:
                 content_items.append(
                     ToolCall(
-                        tool_call_id = tool_call.id,
-                        name = tool_call.function.name or "",
-                        arguments = json.loads(tool_call.function.arguments)
+                        tool_call_id=tool_call.id,
+                        name=tool_call.function.name or "",
+                        arguments=json.loads(tool_call.function.arguments),
                     )
                 )
 
         usage = cast(Usage, getattr(response, "usage"))
         return LlmResponse(
-            contents = content_items,
-            usage_metadata = {
+            contents=content_items,
+            usage_metadata={
                 "input_tokens": usage.prompt_tokens,
                 "output_tokens": usage.completion_tokens,
-            }
+            },
         )

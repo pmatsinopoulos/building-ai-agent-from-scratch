@@ -3,7 +3,8 @@ import os
 from openai import OpenAI
 from sklearn.metrics.pairwise import cosine_similarity
 
-def get_embeddings(client,texts, model="text-embedding-3-small"):
+
+def get_embeddings(client, texts, model="text-embedding-3-small"):
     """Convert text to embedding vectors."""
 
     if isinstance(texts, str):
@@ -14,7 +15,6 @@ def get_embeddings(client,texts, model="text-embedding-3-small"):
     return np.array([item.embedding for item in response.data])
 
 
-
 def main():
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     sentences = [
@@ -22,7 +22,7 @@ def main():
         "A kitten is playing with a toy",
         "The dog is running in the park",
     ]
-    embeddings = get_embeddings(client=client,texts=sentences)
+    embeddings = get_embeddings(client=client, texts=sentences)
 
     cat_kitten = cosine_similarity([embeddings[0]], [embeddings[1]])[0][0]
     cat_dog = cosine_similarity([embeddings[0]], [embeddings[2]])[0][0]

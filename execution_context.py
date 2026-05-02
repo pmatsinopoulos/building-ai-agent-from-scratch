@@ -6,6 +6,7 @@ from pydantic import BaseModel, SerializeAsAny
 
 from content_types import Event
 
+
 @dataclass
 class ExecutionContext:
     """Central storage for all execution state."""

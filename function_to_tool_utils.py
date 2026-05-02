@@ -18,9 +18,7 @@ def function_to_input_schema(func: Callable[..., Any]) -> dict[str, Any]:
     try:
         signature = inspect.signature(func)
     except ValueError as e:
-        raise ValueError(
-            f"Failed to get signature for function {func.__name__}: {str(e)}"
-        )
+        raise ValueError(f"Failed to get signature for function {func.__name__}: {str(e)}")
 
     parameters = {}
     for param in signature.parameters.values():
@@ -28,7 +26,9 @@ def function_to_input_schema(func: Callable[..., Any]) -> dict[str, Any]:
         if isinstance(annotation, type) and issubclass(annotation, BaseModel):
             parameters[param.name] = annotation.model_json_schema()
         else:
-            param_type = type_map.get(annotation, "string") if isinstance(annotation, type) else "string"
+            param_type = (
+                type_map.get(annotation, "string") if isinstance(annotation, type) else "string"
+            )
             parameters[param.name] = {"type": param_type}
 
     required = [
@@ -38,17 +38,20 @@ def function_to_input_schema(func: Callable[..., Any]) -> dict[str, Any]:
     ]
 
     return {
-            "type": "object",
-            "properties": parameters,
-            "required": required,
-        }
+        "type": "object",
+        "properties": parameters,
+        "required": required,
+    }
 
-def format_tool_definition(name: str, description: str, parameters: dict[str, Any]) -> dict[str, Any]:
+
+def format_tool_definition(
+    name: str, description: str, parameters: dict[str, Any]
+) -> dict[str, Any]:
     return {
         "type": "function",
         "function": {
             "name": name,
             "description": description,
             "parameters": parameters,
-        }
+        },
     }
