@@ -8,6 +8,7 @@ from execution_context import ExecutionContext
 
 class AgentResult(BaseModel):
     """Result of an agent execution."""
+
     output: str | SerializeAsAny[BaseModel] | None = Field(default=None)
     context: ExecutionContext = Field(default_factory=ExecutionContext)
 
@@ -16,10 +17,10 @@ class Agent:
     def __init__(
         self,
         name: str,
-        llm_client: LlmClient, # The LlmClient instance that handles LLM communication. Example: client = LlmClient(model="gpt-5-mini").
-        tools: list[FunctionTool] | None= None, # The tools that the Agent can use
-        instructions: list[str] | None=None, # System prompt that defines the agent's behaviour.
-        max_steps: int =10, # Safety limit to prevent infinite loops.
+        llm_client: LlmClient,  # The LlmClient instance that handles LLM communication. Example: client = LlmClient(model="gpt-5-mini").
+        tools: list[FunctionTool] | None = None,  # The tools that the Agent can use
+        instructions: list[str] | None = None,  # System prompt that defines the agent's behaviour.
+        max_steps: int = 10,  # Safety limit to prevent infinite loops.
         output_type: Optional[Type[BaseModel]] = None,
     ):
         self.name = name
@@ -27,7 +28,7 @@ class Agent:
         self.instructions = instructions
         self.max_steps = max_steps
         self.output_type = output_type
-        self.output_tool_name: str | None = None # will be set if output_type provided
+        self.output_tool_name: str | None = None  # will be set if output_type provided
         self.tools = self._setup_tools(tools or [])
 
     def _setup_tools(self, tools: list[FunctionTool]) -> list[FunctionTool]:
@@ -47,7 +48,7 @@ class Agent:
                 description="Return the final structured answer matching the required schema.",
             )
 
-            tools = list(tools) # create a copy to avoid modifying the original list
+            tools = list(tools)  # create a copy to avoid modifying the original list
             tools.append(final_answer)
             self.output_tool_name = "final_answer"
 
@@ -56,7 +57,7 @@ class Agent:
     async def run(
         self,
         user_input: str,
-        context: ExecutionContext | None=None,
+        context: ExecutionContext | None = None,
     ) -> AgentResult:
         # Create or reuse context
         if context is None:
@@ -64,16 +65,16 @@ class Agent:
 
         # Everything is added as Event in order to help troubleshooting
         event = Event(
-            execution_id=context.execution_id, # we keep all events under the same execution id
+            execution_id=context.execution_id,  # we keep all events under the same execution id
             author="user",
             contents=[
                 Message(
                     role="user",
                     content=user_input,
                 )
-            ]
+            ],
         )
-        context.add_event(event) # all the events are added to the context
+        context.add_event(event)  # all the events are added to the context
 
         while not context.final_result and context.current_step < self.max_steps:
             await self._step(context)
@@ -98,12 +99,18 @@ class Agent:
         if self.output_type:
             # For structured output, check if final_answer tool succeeded.
             for content_item in event.contents:
-                if (isinstance(content_item, ToolResult) and content_item.name == self.output_tool_name and content_item.status == "success"):
+                if (
+                    isinstance(content_item, ToolResult)
+                    and content_item.name == self.output_tool_name
+                    and content_item.status == "success"
+                ):
                     return True
             return False
 
         has_tool_calls = any(isinstance(content_item, ToolCall) for content_item in event.contents)
-        has_tool_results = any(isinstance(content_item, ToolResult) for content_item in event.contents)
+        has_tool_results = any(
+            isinstance(content_item, ToolResult) for content_item in event.contents
+        )
         return not has_tool_calls and not has_tool_results
 
     def _extract_final_result(self, event: Event) -> str | BaseModel | None:
@@ -113,7 +120,11 @@ class Agent:
         """
         if self.output_type:
             for content_item in event.contents:
-                if isinstance(content_item, ToolResult) and content_item.name == self.output_tool_name and content_item.status == "success":
+                if (
+                    isinstance(content_item, ToolResult)
+                    and content_item.name == self.output_tool_name
+                    and content_item.status == "success"
+                ):
                     result: str | BaseModel | None = content_item.contents[0]
                     return result
 
@@ -139,7 +150,11 @@ class Agent:
         context.add_event(response_event)
 
         # Execute tools if the LLM requested any
-        tool_calls = [content_item for content_item in llm_response.contents if isinstance(content_item, ToolCall)]
+        tool_calls = [
+            content_item
+            for content_item in llm_response.contents
+            if isinstance(content_item, ToolCall)
+        ]
         if tool_calls:
             tool_results = await self._act(context, tool_calls)
             tool_event = Event(
@@ -155,7 +170,9 @@ class Agent:
         """Prepare the LlmRequest based on the context."""
 
         # event.contents is a List of ContentItem objects
-        flat_contents = [content_item for event in context.events for content_item in event.contents]
+        flat_contents = [
+            content_item for event in context.events for content_item in event.contents
+        ]
 
         if self.tools:
             if self.output_type:
@@ -166,10 +183,10 @@ class Agent:
             tool_choice = None
 
         return LlmRequest(
-            instructions=self.instructions, # all requests contain the same instructions
-            contents=flat_contents, # this changes per step, hence each request grows the +contents+
-            tools=self.tools, # all requests contain the same tools
-            tool_choice=tool_choice # all requests contain the same tool choice
+            instructions=self.instructions,  # all requests contain the same instructions
+            contents=flat_contents,  # this changes per step, hence each request grows the +contents+
+            tools=self.tools,  # all requests contain the same tools
+            tool_choice=tool_choice,  # all requests contain the same tool choice
         )
 
     async def _think(self, llm_request: LlmRequest) -> LlmResponse:
@@ -209,7 +226,7 @@ class Agent:
                         tool_call_id=tool_call.tool_call_id,
                         name=tool_call.name,
                         status="error",
-                        contents=[str(e)]
+                        contents=[str(e)],
                     )
                 )
 

@@ -6,12 +6,13 @@ from execution_context import ExecutionContext
 from function_to_tool_utils import format_tool_definition, function_to_input_schema
 from tavily import TavilyClient
 
+
 class BaseTool(ABC):
     """Abstract base class for all tools."""
 
     def __init__(
         self,
-        name: str | None= None,
+        name: str | None = None,
         description: str | None = None,
         tool_definition: dict[str, Any] | None = None,
     ):
@@ -54,21 +55,13 @@ class FunctionTool(BaseTool):
         name = name or func.__name__
         description = description or (func.__doc__ or "").strip()
 
-        super().__init__(
-            name=name,
-            description=description,
-            tool_definition=tool_definition
-        )
+        super().__init__(name=name, description=description, tool_definition=tool_definition)
 
-        self.needs_context = 'context' in inspect.signature(func).parameters
+        self.needs_context = "context" in inspect.signature(func).parameters
 
-    async def execute(
-        self,
-        context: ExecutionContext,
-        **kwargs: Any
-    ) -> Any:
+    async def execute(self, context: ExecutionContext, **kwargs: Any) -> Any:
         if self.needs_context:
-            result =self.func(context=context, **kwargs)
+            result = self.func(context=context, **kwargs)
         else:
             result = self.func(**kwargs)
 
@@ -85,8 +78,12 @@ class FunctionTool(BaseTool):
 @overload
 def tool(func: Callable[..., Any], /) -> FunctionTool: ...
 
+
 @overload
-def tool(*, name: str | None = None, description: str | None = None) -> Callable[[Callable[..., Any]], FunctionTool]: ...
+def tool(
+    *, name: str | None = None, description: str | None = None
+) -> Callable[[Callable[..., Any]], FunctionTool]: ...
+
 
 def tool(
     func: Callable[..., Any] | None = None,
@@ -113,10 +110,12 @@ def tool(
 
     return decorator
 
+
 @tool
 def calculator(expression: str) -> float:
     """Calculate the result of a mathematical expression."""
     return cast(float, eval(expression))
+
 
 @tool
 def search_web(
@@ -124,7 +123,8 @@ def search_web(
     max_results: int = 2,
     topic: Literal["general", "news", "finance"] = "general",
     time_range: Literal["day", "week", "month", "year"] | None = None,
-    country: str | None = None) -> list[dict[str, Any]] | str:
+    country: str | None = None,
+) -> list[dict[str, Any]] | str:
     """Search the web using Tavily API.
 
     Args:
@@ -141,7 +141,10 @@ def search_web(
             kwargs["time_range"] = time_range
         if country is not None:
             kwargs["country"] = country
-        response = cast(dict[str, Any], tavily_client.search(**kwargs))  # pyright: ignore[reportUnknownMemberType]
+        response = cast(
+            dict[str, Any],
+            tavily_client.search(**kwargs),  # pyright: ignore[reportUnknownMemberType]
+        )
         return cast(list[dict[str, Any]], response.get("results", []))
     except Exception as e:
         return f"Search error: {str(e)}"

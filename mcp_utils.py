@@ -40,18 +40,17 @@ def _create_mcp_tool(mcp_tool: Tool, connection: dict[str, Any]) -> FunctionTool
             "name": mcp_tool.name,
             "description": mcp_tool.description,
             "parameters": mcp_tool.inputSchema,
-        }
+        },
     }
 
     return FunctionTool(
         func=call_mcp,
         name=mcp_tool.name,
         description=mcp_tool.description,
-        tool_definition=tool_definition
+        tool_definition=tool_definition,
     )
+
 
 def _extract_text_content(result: CallToolResult) -> str:
     """Extract concatenated text from an MCP CallToolResult."""
-    return "\n".join(
-        block.text for block in result.content if block.type == "text"
-    )
+    return "\n".join(block.text for block in result.content if block.type == "text")

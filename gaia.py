@@ -4,10 +4,12 @@ from agent import Agent
 from llm_client import LlmClient
 from tools import FunctionTool
 
+
 class GaiaOutput(BaseModel):
     is_solvable: bool
     unsolvable_reason: str = ""
     final_answer: str = ""
+
 
 gaia_prompt = """You are a general AI assistant. I will ask you a question.
 
@@ -25,6 +27,7 @@ If you are asked for a string, don't use articles, neither abbreviations (e.g. f
 
 If you are asked for a comma separated list, apply the above rules depending on whether the element is a number or a string.
 """
+
 
 def create_gaia_agent(model: str, tools: list[FunctionTool]) -> Agent:
     return Agent(

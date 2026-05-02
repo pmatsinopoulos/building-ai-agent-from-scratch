@@ -15,7 +15,7 @@ tavily_connection = {
     "args": ["-y", "tavily-mcp@latest"],
     "env": {
         "TAVILY_API_KEY": os.getenv("TAVILY_API_KEY"),
-    }
+    },
 }
 
 SEMAPHORE = asyncio.Semaphore(3)
@@ -31,9 +31,7 @@ async def solve_problem(agent: Agent, question: str) -> AgentResult:
 
 
 async def evaluate_gaia_single(
-    problem: dict[str, Any],
-    model: str,
-    tools: list[FunctionTool]
+    problem: dict[str, Any], model: str, tools: list[FunctionTool]
 ) -> dict[str, Any]:
     """Evaluate a single GAIA problem with a given model."""
     agent = create_gaia_agent(model=model, tools=tools)
@@ -60,15 +58,11 @@ async def evaluate_gaia_single(
 
 
 async def run_experiment(
-    problems: list[dict[str, Any]],
-    models: list[str],
-    tools: list[FunctionTool]
+    problems: list[dict[str, Any]], models: list[str], tools: list[FunctionTool]
 ) -> dict[str, list[dict[str, Any]]]:
     """Evaluate all models on all problems."""
     tasks = [
-        evaluate_gaia_single(problem, model, tools)
-        for problem in problems
-        for model in models
+        evaluate_gaia_single(problem, model, tools) for problem in problems for model in models
     ]
 
     all_results: list[dict[str, Any]] = await tqdm_asyncio.gather(*tasks)  # pyright: ignore[reportUnknownMemberType]
