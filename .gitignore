@@ -11,3 +11,6 @@ wheels/
 .env
 .envrc
 
+downloads/
+
+gaia_cache/
