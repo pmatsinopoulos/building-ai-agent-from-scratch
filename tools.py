@@ -143,7 +143,7 @@ def search_web(
             kwargs["country"] = country
         response = cast(
             dict[str, Any],
-            tavily_client.search(**kwargs),  # pyright: ignore[reportUnknownMemberType]
+            tavily_client.search(**kwargs),
         )
         return cast(list[dict[str, Any]], response.get("results", []))
     except Exception as e:

@@ -60,14 +60,10 @@ def _read_text_file(file_path: str, start_line: int = 1, end_line: int = -1) -> 
 
 
 def _read_csv_file(file_path: str) -> str:
-    df = pd.read_csv(file_path)  # pyright: ignore[reportUnknownMemberType]
-    return cast(  # pyright: ignore[reportUnnecessaryCast]
-        str, df.to_markdown(index=False)  # pyright: ignore[reportUnknownMemberType]
-    )
+    df = pd.read_csv(file_path)
+    return cast(str, df.to_markdown(index=False))
 
 
 def _read_excel_file(file_path: str) -> str:
-    df = pd.read_excel(file_path)  # pyright: ignore[reportUnknownMemberType]
-    return cast(  # pyright: ignore[reportUnnecessaryCast]
-        str, df.to_markdown(index=False)  # pyright: ignore[reportUnknownMemberType]
-    )
+    df = pd.read_excel(file_path)
+    return cast(str, df.to_markdown(index=False))

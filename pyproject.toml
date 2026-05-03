@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["black>=26.3.1", "mypy>=1.20.1", "pyright>=1.1.408"]
+dev = ["black>=26.3.1", "mypy>=1.20.1"]
 
 [tool.black]
 line-length = 100
@@ -28,17 +28,3 @@ python_version = "3.13"
 strict = true
 ignore_missing_imports = true
 exclude = ["downloads", "gaia_cache"]
-
-[tool.pyright]
-typeCheckingMode = "strict"
-reportMissingTypeStubs = false
-reportUnknownVariableType = false
-venvPath = "."
-venv = ".venv"
-exclude = [
-    "downloads",
-    "gaia_cache",
-    "**/gaia_cache",
-    ".venv",
-    "**/__pycache__",
-]

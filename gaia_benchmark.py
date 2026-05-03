@@ -65,7 +65,7 @@ async def run_experiment(
         evaluate_gaia_single(problem, model, tools) for problem in problems for model in models
     ]
 
-    all_results: list[dict[str, Any]] = await tqdm_asyncio.gather(*tasks)  # pyright: ignore[reportUnknownMemberType]
+    all_results: list[dict[str, Any]] = await tqdm_asyncio.gather(*tasks)
 
     results: dict[str, list[dict[str, Any]]] = {model: [] for model in models}
     for result in all_results:

@@ -15,7 +15,7 @@ def vector_search(
 
     query_embedding = get_embeddings(client=client, texts=[query])
     similarities = cosine_similarity(query_embedding, chunk_embeddings)[0]
-    top_indices = similarities.argsort()[::-1][:top_k]  # pyright: ignore[reportUnknownMemberType]
+    top_indices = similarities.argsort()[::-1][:top_k]
 
     results: list[dict[str, Any]] = []
     for idx in top_indices:
