@@ -19,7 +19,7 @@ if __name__ == "__main__":
     # STEP 1: web search
     response: dict[str, Any] = cast(
         dict[str, Any],
-        tavily.search(  # pyright: ignore[reportUnknownMemberType]
+        tavily.search(
             query=query,
             max_results=max_results,
             include_raw_content=include_raw_content,
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     search_results = []
     for result in response["results"]:
         if result.get("raw_content"):
-            search_results.append(  # pyright: ignore[reportUnknownMemberType]
+            search_results.append(
                 {
                     "title": result["title"],
                     "content": result["raw_content"],

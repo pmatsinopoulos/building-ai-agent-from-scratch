@@ -96,12 +96,12 @@ def _analyze_pdf(file_path: str, query: str) -> str:
     # Extract text for context
     text_content = ""
     for page in doc:  # type: ignore[attr-defined]
-        text_content += cast(str, page.get_text())  # pyright: ignore[reportUnknownMemberType]
+        text_content += cast(str, page.get_text())
 
     # convert pages to images
     images: list[str] = []
     for page in doc[:5]:  # first 5 pages
-        pix = page.get_pixmap(  # pyright: ignore[reportUnknownMemberType]
+        pix = page.get_pixmap(
             matrix=fitz.Matrix(2, 2),  # type: ignore[no-untyped-call]
         )
         img_bytes = cast(bytes, pix.tobytes("png"))  # type: ignore[no-untyped-call]

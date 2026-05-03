@@ -1,9 +1,24 @@
-from typing import Any, Optional, Type
+import inspect
+from collections.abc import Awaitable
+from typing import Any, Callable, List, Literal, Optional, Type
+
+from pydantic import BaseModel, Field, SerializeAsAny
+
 from content_types import Event, Message, ToolCall, ToolResult
+from execution_context import ExecutionContext
 from llm_client import LlmClient, LlmRequest, LlmResponse
 from tools import FunctionTool
-from pydantic import BaseModel, Field, SerializeAsAny
-from execution_context import ExecutionContext
+
+BeforeToolCallbackResultType = str | None | Awaitable[str | None]
+BeforeToolCallbackType = Callable[
+    [ExecutionContext, ToolCall],
+    BeforeToolCallbackResultType,
+]
+AfterToolCallbackResultType = ToolResult | None | Awaitable[ToolResult | None]
+AfterToolCallbackType = Callable[
+    [ExecutionContext, ToolResult],
+    AfterToolCallbackResultType,
+]
 
 
 class AgentResult(BaseModel):
@@ -22,6 +37,8 @@ class Agent:
         instructions: list[str] | None = None,  # System prompt that defines the agent's behaviour.
         max_steps: int = 10,  # Safety limit to prevent infinite loops.
         output_type: Optional[Type[BaseModel]] = None,
+        before_tool_callbacks: List[BeforeToolCallbackType] | None = None,
+        after_tool_callbacks: List[AfterToolCallbackType] | None = None,
     ):
         self.name = name
         self.llm_client = llm_client
@@ -30,6 +47,8 @@ class Agent:
         self.output_type = output_type
         self.output_tool_name: str | None = None  # will be set if output_type provided
         self.tools = self._setup_tools(tools or [])
+        self.before_tool_callbacks = before_tool_callbacks or []
+        self.after_tool_callbacks = after_tool_callbacks or []
 
     def _setup_tools(self, tools: list[FunctionTool]) -> list[FunctionTool]:
         if self.output_type is not None:
@@ -192,6 +211,34 @@ class Agent:
     async def _think(self, llm_request: LlmRequest) -> LlmResponse:
         return await self.llm_client.generate(llm_request)
 
+    async def _run_before_tool_callbacks(
+        self,
+        context: ExecutionContext,
+        tool_call: ToolCall,
+    ) -> str | None:
+        """Run before_tool_callbacks; return the first non-None result, else None."""
+        for callback in self.before_tool_callbacks:
+            result: BeforeToolCallbackResultType = callback(context, tool_call)
+            if inspect.isawaitable(result):
+                result = await result
+            if result is not None:
+                return result
+        return None
+
+    async def _run_after_tool_callbacks(
+        self,
+        context: ExecutionContext,
+        tool_result: ToolResult,
+    ) -> ToolResult | None:
+        """Run after_tool_callbacks; return the first non-None ToolResult, else None."""
+        for callback in self.after_tool_callbacks:
+            result: AfterToolCallbackResultType = callback(context, tool_result)
+            if inspect.isawaitable(result):
+                result = await result
+            if result is not None:
+                return result
+        return None
+
     async def _act(
         self,
         context: ExecutionContext,
@@ -210,24 +257,36 @@ class Agent:
 
             tool = tools_dict[tool_call.name]
 
-            try:
-                output = await tool.execute(context=context, **tool_call.arguments)
-                results.append(
-                    ToolResult(
-                        tool_call_id=tool_call.tool_call_id,
-                        name=tool_call.name,
-                        status="success",
-                        contents=[output],
-                    )
-                )
-            except Exception as e:
-                results.append(
-                    ToolResult(
-                        tool_call_id=tool_call.tool_call_id,
-                        name=tool_call.name,
-                        status="error",
-                        contents=[str(e)],
-                    )
-                )
+            tool_response: str | None = None
+            status: Literal["success", "error"] = "success"
+
+            # Stage 1: Execute before_tool_callbacks
+            tool_response = await self._run_before_tool_callbacks(context, tool_call)
+
+            # Stage 2: Execute actual tool only if callback didn't provide a result
+            if tool_response is None:
+                try:
+                    tool_response = await tool.execute(context=context, **tool_call.arguments)
+                except Exception as e:
+                    tool_response = str(e)
+                    status = "error"
+
+            tool_result: ToolResult = ToolResult(
+                tool_call_id=tool_call.tool_call_id,
+                name=tool_call.name,
+                status=status,
+                contents=[
+                    tool_response
+                ],  # At this point, tool_response is coming either from a before tool callback or from the actual tool execution
+            )
+
+            # Stage 3: Execute after_tool_callbacks
+            override = await self._run_after_tool_callbacks(context, tool_result)
+            if override is not None:
+                tool_result = override
+
+            results.append(
+                tool_result
+            )  # At this point, tool_result is coming either from a before tool callback or from the actual tool execution or from an after tool callback
 
         return results
