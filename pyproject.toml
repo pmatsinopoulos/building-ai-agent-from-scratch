@@ -9,6 +9,7 @@ dependencies = [
     "litellm>=1.83.4",
     "mcp[cli]>=1.27.0",
     "pydantic>=2.12.5",
+    "pymupdf>=1.27.2.3",
     "scikit-learn>=1.8.0",
     "tavily>=1.1.0",
     "tavily-python>=0.7.23",
@@ -16,20 +17,17 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = [
-    "black>=26.3.1",
-    "mypy>=1.20.1",
-    "pyright>=1.1.408",
-]
+dev = ["black>=26.3.1", "mypy>=1.20.1", "pyright>=1.1.408"]
 
 [tool.black]
 line-length = 100
 target-version = ["py313"]
 
 [tool.mypy]
-python_version = "3.14.3"     # Set to your project's version
-strict = true                 # Enables the most exhaustive type checking
+python_version = "3.13"
+strict = true
 ignore_missing_imports = true
+exclude = ["downloads", "gaia_cache"]
 
 [tool.pyright]
 typeCheckingMode = "strict"
@@ -37,3 +35,10 @@ reportMissingTypeStubs = false
 reportUnknownVariableType = false
 venvPath = "."
 venv = ".venv"
+exclude = [
+    "downloads",
+    "gaia_cache",
+    "**/gaia_cache",
+    ".venv",
+    "**/__pycache__",
+]

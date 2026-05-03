@@ -29,7 +29,7 @@ if __name__ == "__main__":
     search_results = []
     for result in response["results"]:
         if result.get("raw_content"):
-            search_results.append(
+            search_results.append(  # pyright: ignore[reportUnknownMemberType]
                 {
                     "title": result["title"],
                     "content": result["raw_content"],
